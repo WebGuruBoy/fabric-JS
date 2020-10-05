@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>OpenSeadragon Fabricjs Overlay Demo</title>
+    <link href="other/roundslider.min.css" rel="stylesheet" />
+                                    
+    <script src="openseadragon/openseadragon.js"></script>
+    <script src="openseadragon-fabricjs-overlay.js"></script>
+
+    <script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
+    <script src="fabric/fabric.adapted.js"></script>
+    <script src="other/roundslider.min.js"></script>
+    <style type="text/css">
+        html,
+        body,
+        .openseadragon1 {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+        #slider{
+            position: absolute;
+            z-index: 100;
+            top:100px;
+            left: 20px;
+        }
+        #previewer{
+            position: absolute;
+            z-index: 100;
+            top:350px;
+            left: 20px;
+            border: 1px solid #00f;
+            background-color: #ffffff55;
+        }
+    </style>
+    <script>
+        var goverlay;
+        // ----------
+        App = {
+            // ----------
+            init: function () {
+                var self = this;
+
+                var tileSource = {
+                    Image: {
+                        xmlns: "http://schemas.microsoft.com/deepzoom/2008",
+                        Url: "http://openseadragon.github.io/example-images/highsmith/highsmith_files/",
+                        Format: "jpg",
+                        Overlap: "2",
+                        TileSize: "256",
+                        Size: {
+                            Height: "9221",
+                            Width: "7026"
+                        }
+                    }
+                };
+
+                this.viewer = OpenSeadragon({
+                    id: "contentDiv",
+                    prefixUrl: "openseadragon/images/",
+                    tileSources: [{
+                        tileSource: tileSource,
+                        width: 1,
+                        y: 0,
+                        x: 0
+                    }]
+                });
+
+                // Initialize overlay
+                var options = {
+                    scale: 1000
+                }
+                var overlay = this.viewer.fabricjsOverlay(options);
+                goverlay = overlay;
+                // Add fabric rectangle
+                var rect = new fabric.Rect({
+                    left: 200,
+                    top: 300,
+                    fill: 'red',
+                    width: 600,
+                    height: 400,
+                    fill: 'transparent',
+                    strokeWidth: 8,
+                    stroke: "#ff0000",
+                });
+                overlay.fabricCanvas().add(rect);
+                // Check value
+                function isRealValue(obj) {
+                    return obj && obj !== 'null' && obj !== 'undefined';
+                }
+
+                /**
+                 * Toggle button on and off
+                 */
+               
+
+            }
+        };
+        /**
+         * rotating the all object.  
+         * @param overlay
+         * @param angle
+         */
+        function rotateObject(overlay, angle){
+            var canvas = overlay.fabricCanvas();
+            let canvasCenter = new fabric.Point(0, 0) // center of canvas
+
+            canvas.getObjects().forEach((obj) => {
+                let objectOrigin = new fabric.Point(obj.left, obj.top)
+                let radians = fabric.util.degreesToRadians(angle - obj.angle)
+                let new_loc = fabric.util.rotatePoint(objectOrigin, canvasCenter, radians)
+                obj.top = new_loc.y
+                obj.left = new_loc.x
+                obj.angle = angle //rotate each object by the same angle
+                // obj.setCoords()
+                canvas.renderAll()
+            });
+        }
+        // ----------
+        $(document).ready(function () {
+            App.init();
+            setTimeout(function(){
+                $("#previewer img").attr('src', $(".openseadragon-canvas > canvas")[0].toDataURL("img/png"))
+            },1000)
+            
+            var dd = $("#slider").roundSlider({
+                sliderType: "range",
+                showTooltip: true,
+                width: 20,
+                radius: 100,
+                pathColor:'#00f',
+                max:360,
+                update: function (e) {
+                    goverlay._viewer.viewport.setRotation(e.handle.value);
+                    rotateObject(goverlay, e.handle.value)
+                    $("#previewer img").css('transform', `rotate(${e.handle.value}deg)`)
+                }
+            });
+        });
+
+    </script>
+</head>
+
+<body>
+    <div id="slider"></div>
+    <div id="previewer">
+        <img width="200px" height="150px">
+    </div>
+    
+    <div id="contentDiv" class="openseadragon1"></div>
+</body>
+
+</html>
